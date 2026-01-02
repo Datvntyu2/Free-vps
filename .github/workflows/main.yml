@@ -324,25 +324,23 @@ jobs:
           $thoiGianKetThuc = $thoiGianBatDau.AddMinutes($totalMinutes)
           
           # Tạo nội dung file vps.txt
-          $vpsContent = @"
-┌───────────────────────────────────────────┐
-│              🎉 KẾT NỐI THÀNH CÔNG!              │
-├───────────────────────────────────────────┤
-│ 🌐  Địa chỉ: $env:TAILSCALE_IP
-│ 👤  Tài khoản: AISTV-PREMIUM
-│ 🔐  Mật khẩu: $matKhau
-│ ⏰  Thời lượng: $displayTime
-│ 🕐  Bắt đầu: $($thoiGianBatDau.ToString('HH:mm:ss'))
-│ 🕐  Kết thúc: $($thoiGianKetThuc.ToString('HH:mm:ss'))
-│ 📍  Port: 3389
-├───────────────────────────────────────────┤
-│ 💡  Hướng dẫn:                                    │
-│   1. Mở Remote Desktop Connection                 │
-│   2. Nhập: $env:TAILSCALE_IP                      │
-│   3. User: AISTV-PREMIUM | Password: trên          │
-│   4. Enjoy! 🚀                                    │
-└───────────────────────────────────────────┘
-"@
+          $vpsContent = "┌───────────────────────────────────────────┐`n"
+          $vpsContent += "│              🎉 KẾT NỐI THÀNH CÔNG!              │`n"
+          $vpsContent += "├───────────────────────────────────────────┤`n"
+          $vpsContent += "│ 🌐  Địa chỉ: $env:TAILSCALE_IP`n"
+          $vpsContent += "│ 👤  Tài khoản: AISTV-PREMIUM`n"
+          $vpsContent += "│ 🔐  Mật khẩu: $matKhau`n"
+          $vpsContent += "│ ⏰  Thời lượng: $displayTime`n"
+          $vpsContent += "│ 🕐  Bắt đầu: $($thoiGianBatDau.ToString('HH:mm:ss'))`n"
+          $vpsContent += "│ 🕐  Kết thúc: $($thoiGianKetThuc.ToString('HH:mm:ss'))`n"
+          $vpsContent += "│ 📍  Port: 3389`n"
+          $vpsContent += "├───────────────────────────────────────────┤`n"
+          $vpsContent += "│ 💡  Hướng dẫn:                                    │`n"
+          $vpsContent += "│   1. Mở Remote Desktop Connection                 │`n"
+          $vpsContent += "│   2. Nhập: $env:TAILSCALE_IP                      │`n"
+          $vpsContent += "│   3. User: AISTV-PREMIUM | Password: trên          │`n"
+          $vpsContent += "│   4. Enjoy! 🚀                                    │`n"
+          $vpsContent += "└───────────────────────────────────────────┘"
           
           # Lưu file vps.txt
           $vpsContent | Out-File -FilePath "vps.txt" -Encoding UTF8
@@ -355,18 +353,19 @@ jobs:
           Write-Host "📄 Nội dung file vps.txt:" -ForegroundColor Cyan
           Get-Content "vps.txt"
           
-          # Tạo thêm file info.txt đơn giản (tùy chọn)
-          $simpleInfo = @"
-[THÔNG TIN KẾT NỐI RDP]
-IP: $env:TAILSCALE_IP
-User: AISTV-PREMIUM
-Password: $matKhau
-Port: 3389
-Thời gian: $displayTime
-Bắt đầu: $($thoiGianBatDau.ToString('HH:mm:ss'))
-Kết thúc: $($thoiGianKetThuc.ToString('HH:mm:ss'))
-"@
+          # Tạo thêm file info.txt đơn giản
+          $simpleInfo = "[THÔNG TIN KẾT NỐI RDP]`n"
+          $simpleInfo += "IP: $env:TAILSCALE_IP`n"
+          $simpleInfo += "User: AISTV-PREMIUM`n"
+          $simpleInfo += "Password: $matKhau`n"
+          $simpleInfo += "Port: 3389`n"
+          $simpleInfo += "Thời gian: $displayTime`n"
+          $simpleInfo += "Bắt đầu: $($thoiGianBatDau.ToString('HH:mm:ss'))`n"
+          $simpleInfo += "Kết thúc: $($thoiGianKetThuc.ToString('HH:mm:ss'))"
+          
           $simpleInfo | Out-File -FilePath "info.txt" -Encoding UTF8
+          
+          Write-Host "✅ Đã tạo file info.txt" -ForegroundColor Green
 
       # UPLOAD FILES AS ARTIFACTS
       - name: 📤 UPLOAD FILES TO ARTIFACTS
