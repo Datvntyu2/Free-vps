@@ -79,7 +79,7 @@ jobs:
           
           Write-Host "🎯 Cấu hình hoàn tất!" -ForegroundColor Green
 
-      # TẠO USER PREMIUM - (tối ưu mật khẩu)
+      # TẠO USER PREMIUM
       - name: 👤 TẠO TÀI KHOẢN PREMIUM
         run: |
           Write-Host ""
@@ -131,7 +131,7 @@ jobs:
               New-LocalUser -Name "AISTV-PREMIUM" -Password $securePass -AccountNeverExpires -Description "AI STV Premium Account"
               Write-Host "│ ✅ Đã tạo user mới" -ForegroundColor Green
               
-              # Đặt password không bao giờ hết hạn (dùng Set-LocalUser nếu cần)
+              # Đặt password không bao giờ hết hạn
               try {
                   Set-LocalUser -Name "AISTV-PREMIUM" -PasswordNeverExpires $true -ErrorAction SilentlyContinue
               } catch {
@@ -153,10 +153,10 @@ jobs:
               exit 1
           }
           
-          # Lưu thông tin (cẩn trọng nếu repo public)
+          # Lưu thông tin
           echo "RDP_USER=AISTV-PREMIUM" >> $env:GITHUB_ENV
           echo "RDP_PASS=$matKhau" >> $env:GITHUB_ENV
-          echo "$matKhau" > $env:TEMP\rdp_password.txt
+          echo "$matKhau" > "$env:TEMP\rdp_password.txt"
           
           Write-Host "✅ Tài khoản: AISTV-PREMIUM đã sẵn sàng" -ForegroundColor Green
 
@@ -258,7 +258,7 @@ jobs:
       # HIỂN THỊ GIAO DIỆN ĐẸP
       - name: 🎉 THÔNG TIN KẾT NỐI
         run: |
-          $matKhau = Get-Content $env:TEMP\rdp_password.txt -ErrorAction SilentlyContinue
+          $matKhau = Get-Content "$env:TEMP\rdp_password.txt" -ErrorAction SilentlyContinue
           if (-not $matKhau) {
               $matKhau = "Không thể đọc mật khẩu"
           }
@@ -298,10 +298,90 @@ jobs:
           # Lưu thời gian vào biến môi trường
           echo "TOTAL_MINUTES=$totalMinutes" >> $env:GITHUB_ENV
 
+      # TẠO FILE VPS.TXT
+      - name: 💾 TẠO FILE VPS.TXT
+        run: |
+          Write-Host ""
+          Write-Host "💾 ĐANG TẠO FILE VPS.TXT..." -ForegroundColor Yellow
+          
+          # Đọc mật khẩu
+          $matKhau = Get-Content "$env:TEMP\rdp_password.txt" -ErrorAction SilentlyContinue
+          if (-not $matKhau) {
+              $matKhau = "Không thể đọc mật khẩu"
+          }
+          
+          # Chuyển đổi thời gian từ input sang phút
+          $durationInput = "${{ github.event.inputs.duration }}"
+          switch ($durationInput) {
+              "1h" { $totalMinutes = 60; $displayTime = "1 giờ" }
+              "3h" { $totalMinutes = 180; $displayTime = "3 giờ" }
+              "5h40m" { $totalMinutes = 340; $displayTime = "5 giờ 40 phút" }
+          }
+          
+          # Tính thời gian
+          $timeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById("SE Asia Standard Time")
+          $thoiGianBatDau = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $timeZone)
+          $thoiGianKetThuc = $thoiGianBatDau.AddMinutes($totalMinutes)
+          
+          # Tạo nội dung file vps.txt
+          $vpsContent = @"
+┌───────────────────────────────────────────┐
+│              🎉 KẾT NỐI THÀNH CÔNG!              │
+├───────────────────────────────────────────┤
+│ 🌐  Địa chỉ: $env:TAILSCALE_IP
+│ 👤  Tài khoản: AISTV-PREMIUM
+│ 🔐  Mật khẩu: $matKhau
+│ ⏰  Thời lượng: $displayTime
+│ 🕐  Bắt đầu: $($thoiGianBatDau.ToString('HH:mm:ss'))
+│ 🕐  Kết thúc: $($thoiGianKetThuc.ToString('HH:mm:ss'))
+│ 📍  Port: 3389
+├───────────────────────────────────────────┤
+│ 💡  Hướng dẫn:                                    │
+│   1. Mở Remote Desktop Connection                 │
+│   2. Nhập: $env:TAILSCALE_IP                      │
+│   3. User: AISTV-PREMIUM | Password: trên          │
+│   4. Enjoy! 🚀                                    │
+└───────────────────────────────────────────┘
+"@
+          
+          # Lưu file vps.txt
+          $vpsContent | Out-File -FilePath "vps.txt" -Encoding UTF8
+          
+          # Xác nhận
+          Write-Host "✅ Đã tạo file vps.txt thành công!" -ForegroundColor Green
+          Write-Host "📁 Đường dẫn: $(Get-Location)\vps.txt" -ForegroundColor Yellow
+          
+          # Hiển thị nội dung
+          Write-Host "📄 Nội dung file vps.txt:" -ForegroundColor Cyan
+          Get-Content "vps.txt"
+          
+          # Tạo thêm file info.txt đơn giản (tùy chọn)
+          $simpleInfo = @"
+[THÔNG TIN KẾT NỐI RDP]
+IP: $env:TAILSCALE_IP
+User: AISTV-PREMIUM
+Password: $matKhau
+Port: 3389
+Thời gian: $displayTime
+Bắt đầu: $($thoiGianBatDau.ToString('HH:mm:ss'))
+Kết thúc: $($thoiGianKetThuc.ToString('HH:mm:ss'))
+"@
+          $simpleInfo | Out-File -FilePath "info.txt" -Encoding UTF8
+
+      # UPLOAD FILES AS ARTIFACTS
+      - name: 📤 UPLOAD FILES TO ARTIFACTS
+        uses: actions/upload-artifact@v4
+        with:
+          name: rdp-connection-files
+          path: |
+            vps.txt
+            info.txt
+          retention-days: 1
+
       # DUY TRÌ PHIÊN ỔN ĐỊNH
       - name: ⏳ DUY TRÌ PHIÊN LÀM VIỆC
         run: |
-          $matKhau = Get-Content $env:TEMP\rdp_password.txt -ErrorAction SilentlyContinue
+          $matKhau = Get-Content "$env:TEMP\rdp_password.txt" -ErrorAction SilentlyContinue
           $totalMinutes = $env:TOTAL_MINUTES
           
           # Tính thời gian chính xác
@@ -385,6 +465,10 @@ jobs:
           $cleanupSteps = @(
               @{Name="Xóa file password"; Script={
                   Remove-Item "$env:TEMP\rdp_password.txt" -ErrorAction SilentlyContinue
+              }},
+              @{Name="Xóa file vps.txt và info.txt"; Script={
+                  Remove-Item "vps.txt" -ErrorAction SilentlyContinue
+                  Remove-Item "info.txt" -ErrorAction SilentlyContinue
               }},
               @{Name="Vô hiệu hóa user"; Script={
                   Disable-LocalUser -Name "AISTV-PREMIUM" -ErrorAction SilentlyContinue
